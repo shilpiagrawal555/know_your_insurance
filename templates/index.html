@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Know Your Insurance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --accent-dark: #1d4ed8;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --null-color: #94a3b8;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+      --shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 10px 40px rgba(0,0,0,.1);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .logo svg { width: 20px; height: 20px; fill: white; }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+    header p.tagline { font-size: 13px; color: var(--text-muted); margin-left: auto; }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    /* ── Upload card ── */
+    .upload-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .upload-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .upload-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 32px;
+      cursor: pointer;
+      transition: all .15s;
+      background: var(--surface2);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-zone .dz-icon {
+      font-size: 40px; margin-bottom: 12px; display: block;
+    }
+    .drop-zone h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .drop-zone p { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+    .drop-zone .selected-file {
+      display: none;
+      margin-top: 16px;
+      padding: 10px 16px;
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      border: 1px solid #bfdbfe;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent-dark);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      margin-top: 20px;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.3); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ── Status bar ── */
+    #status-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    #status-bar.visible { display: flex; }
+    .spinner {
+      width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #status-text { font-size: 14px; font-weight: 500; }
+
+    /* ── Error banner ── */
+    #error-banner {
+      display: none;
+      background: var(--danger-light);
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      color: var(--danger);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    #error-banner.visible { display: block; }
+
+    /* ── Results ── */
+    #results { display: none; }
+    #results.visible { display: block; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .results-header h2 { font-size: 20px; font-weight: 700; }
+    .meta-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 100px;
+    }
+
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 700px) {
+      .sections-grid { grid-template-columns: 1fr; }
+    }
+
+    .section-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .section-card.full-width {
+      grid-column: 1 / -1;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .section-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .section-header h3 { font-size: 14px; font-weight: 700; letter-spacing: .2px; }
+    .section-body { padding: 16px 20px; }
+
+    /* ── Field rows ── */
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .field-row:last-child { border-bottom: none; }
+    .field-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .field-value {
+      font-weight: 600;
+      text-align: right;
+      word-break: break-word;
+    }
+    .field-value.null-value {
+      color: var(--null-color);
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    /* Cost sharing highlight */
+    .cost-highlight {
+      background: var(--accent-light);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+    }
+    .cost-highlight .field-row { border-bottom-color: #bfdbfe; }
+    .cost-highlight .field-row:last-child { border-bottom: none; }
+
+    /* ── Lists (benefits, exclusions, etc.) ── */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
+    }
+    .tag {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 100px;
+      line-height: 1.4;
+    }
+    .tag-success { background: var(--success-light); color: var(--success); }
+    .tag-danger { background: var(--danger-light); color: var(--danger); }
+    .tag-warning { background: var(--warning-light); color: var(--warning); }
+    .tag-default { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .empty-list {
+      font-size: 13px;
+      color: var(--null-color);
+      font-style: italic;
+      padding: 8px 0;
+    }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      margin-top: 28px;
+      padding: 16px 20px;
+      background: var(--warning-light);
+      border: 1px solid #fde68a;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: #92400e;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .disclaimer span:first-child { font-size: 16px; flex-shrink: 0; }
+
+    /* ── Upload new button ── */
+    .upload-new-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .upload-new-btn:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z"/></svg>
+    </div>
+    <h1>Know Your Insurance</h1>
+    <p class="tagline">Instant policy clarity</p>
+  </div>
+</header>
+
+<main>
+  <!-- Upload card -->
+  <div class="upload-card" id="upload-section">
+    <h2>Understand your insurance policy in seconds</h2>
+    <p>Upload your PDF policy document. We extract every detail exactly as written — no guessing, no hallucinations.</p>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf" />
+      <span class="dz-icon">📄</span>
+      <h3>Drop your PDF here</h3>
+      <p>or click to browse &nbsp;·&nbsp; PDF only &nbsp;·&nbsp; Max 50 MB</p>
+      <div class="selected-file" id="selected-file-label"></div>
+    </div>
+
+    <button class="btn btn-primary" id="parse-btn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Analyse Policy
+    </button>
+  </div>
+
+  <!-- Status bar -->
+  <div id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Extracting text from PDF…</span>
+  </div>
+
+  <!-- Error banner -->
+  <div id="error-banner"></div>
+
+  <!-- Results -->
+  <div id="results">
+    <div class="results-header">
+      <h2>Policy Summary</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="meta-badge" id="meta-info"></span>
+        <button class="upload-new-btn" id="reset-btn">↑ Upload another</button>
+      </div>
+    </div>
+
+    <div class="sections-grid" id="sections-grid">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="disclaimer">
+      <span>⚠️</span>
+      <span>All information above is extracted verbatim from your document. Fields shown as <em>"Not found in document"</em> were not explicitly stated. Always refer to your original policy for the authoritative terms.</span>
+    </div>
+  </div>
+</main>
+
+<script>
+  const fileInput = document.getElementById("file-input");
+  const dropZone = document.getElementById("drop-zone");
+  const selectedLabel = document.getElementById("selected-file-label");
+  const parseBtn = document.getElementById("parse-btn");
+  const statusBar = document.getElementById("status-bar");
+  const statusText = document.getElementById("status-text");
+  const errorBanner = document.getElementById("error-banner");
+  const resultsEl = document.getElementById("results");
+  const sectionsGrid = document.getElementById("sections-grid");
+  const metaInfo = document.getElementById("meta-info");
+  const resetBtn = document.getElementById("reset-btn");
+  const uploadSection = document.getElementById("upload-section");
+
+  let selectedFile = null;
+
+  // Drag & drop
+  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("drag-over");
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === "application/pdf") setFile(f);
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  function setFile(f) {
+    selectedFile = f;
+    selectedLabel.textContent = `📄 ${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+    selectedLabel.style.display = "block";
+    parseBtn.disabled = false;
+  }
+
+  parseBtn.addEventListener("click", () => {
+    if (!selectedFile) return;
+    uploadAndParse(selectedFile);
+  });
+
+  resetBtn.addEventListener("click", () => {
+    selectedFile = null;
+    fileInput.value = "";
+    selectedLabel.style.display = "none";
+    selectedLabel.textContent = "";
+    parseBtn.disabled = true;
+    resultsEl.classList.remove("visible");
+    errorBanner.classList.remove("visible");
+    uploadSection.style.display = "";
+  });
+
+  function showStatus(msg) {
+    statusText.textContent = msg;
+    statusBar.classList.add("visible");
+  }
+  function hideStatus() { statusBar.classList.remove("visible"); }
+  function showError(msg) {
+    errorBanner.textContent = "⚠ " + msg;
+    errorBanner.classList.add("visible");
+  }
+
+  async function uploadAndParse(file) {
+    errorBanner.classList.remove("visible");
+    resultsEl.classList.remove("visible");
+    uploadSection.style.display = "none";
+    showStatus("Uploading and extracting text from PDF…");
+    parseBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      showStatus("Sending to AI for extraction…");
+      const resp = await fetch("/parse", { method: "POST", body: formData });
+
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.error || "Server error");
+      }
+
+      showStatus("Analysing policy document…");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const payload = JSON.parse(line.slice(6));
+            hideStatus();
+            if (payload.success) {
+              renderResults(payload.data, payload.meta);
+            } else {
+              uploadSection.style.display = "";
+              parseBtn.disabled = false;
+              showError(payload.error);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      hideStatus();
+      uploadSection.style.display = "";
+      parseBtn.disabled = false;
+      showError(e.message);
+    }
+  }
+
+  // ── Rendering ──────────────────────────────────────────────────────────────
+
+  function val(v) {
+    if (v === null || v === undefined || v === "") return null;
+    return v;
+  }
+
+  function fieldRow(label, value) {
+    const v = val(value);
+    return `<div class="field-row">
+      <span class="field-label">${label}</span>
+      <span class="field-value ${v ? "" : "null-value"}">${v || "Not found in document"}</span>
+    </div>`;
+  }
+
+  function sectionCard(icon, color, title, bodyHtml, fullWidth = false) {
+    return `<div class="section-card ${fullWidth ? "full-width" : ""}">
+      <div class="section-header">
+        <div class="section-icon" style="background:${color}20;color:${color}">${icon}</div>
+        <h3>${title}</h3>
+      </div>
+      <div class="section-body">${bodyHtml}</div>
+    </div>`;
+  }
+
+  function tagList(items, tagClass) {
+    if (!items || items.length === 0) return `<p class="empty-list">None listed in document</p>`;
+    return `<div class="tag-list">${items.map(i => `<span class="tag ${tagClass}">${escHtml(i)}</span>`).join("")}</div>`;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function renderResults(data, meta) {
+    const p = data.policy_holder || {};
+    const ins = data.insurer || {};
+    const pol = data.policy || {};
+    const cov = data.coverage || {};
+    const cs = data.cost_sharing || {};
+
+    sectionsGrid.innerHTML = [
+      sectionCard("🧑", "#2563eb", "Policy Holder",
+        fieldRow("Full Name", p.name) +
+        fieldRow("Address", p.address) +
+        fieldRow("Date of Birth", p.date_of_birth) +
+        fieldRow("Member / Subscriber ID", p.member_id) +
+        fieldRow("Group Number", p.group_number)
+      ),
+
+      sectionCard("🏢", "#7c3aed", "Insurance Company",
+        fieldRow("Company Name", ins.company_name) +
+        fieldRow("Phone", ins.phone) +
+        fieldRow("Website", ins.website) +
+        fieldRow("Address", ins.address)
+      ),
+
+      sectionCard("📋", "#0891b2", "Policy Details",
+        fieldRow("Policy Number", pol.policy_number) +
+        fieldRow("Policy Type", pol.policy_type) +
+        fieldRow("Effective Date", pol.effective_date) +
+        fieldRow("Expiration Date", pol.expiration_date) +
+        fieldRow("Premium", pol.premium_amount) +
+        fieldRow("Payment Due Date", pol.payment_due_date)
+      ),
+
+      sectionCard("🛡️", "#059669", "Coverage",
+        fieldRow("Deductible (Individual)", cov.deductible_individual) +
+        fieldRow("Deductible (Family)", cov.deductible_family) +
+        fieldRow("Out-of-Pocket Max (Individual)", cov.out_of_pocket_max_individual) +
+        fieldRow("Out-of-Pocket Max (Family)", cov.out_of_pocket_max_family) +
+        fieldRow("Lifetime Maximum", cov.lifetime_maximum) +
+        fieldRow("Network", cov.network)
+      ),
+
+      sectionCard("💊", "#dc2626", "Cost Sharing",
+        `<div class="cost-highlight">` +
+        fieldRow("Primary Care Copay", cs.primary_care_copay) +
+        fieldRow("Specialist Copay", cs.specialist_copay) +
+        fieldRow("Emergency Room Copay", cs.emergency_room_copay) +
+        fieldRow("Urgent Care Copay", cs.urgent_care_copay) +
+        `</div>` +
+        fieldRow("Coinsurance", cs.coinsurance) +
+        fieldRow("Rx Tier 1", cs.prescription_tier1) +
+        fieldRow("Rx Tier 2", cs.prescription_tier2) +
+        fieldRow("Rx Tier 3", cs.prescription_tier3)
+      ),
+
+      sectionCard("✅", "#059669", "Covered Benefits",
+        tagList(data.covered_benefits, "tag-success"),
+        true
+      ),
+
+      sectionCard("🚫", "#dc2626", "Exclusions",
+        tagList(data.exclusions, "tag-danger"),
+        true
+      ),
+
+      sectionCard("📞", "#d97706", "Pre-Authorization Required",
+        tagList(data.pre_authorization, "tag-warning"),
+        true
+      ),
+
+      ...(data.additional_notes && data.additional_notes.length > 0 ? [
+        sectionCard("📝", "#64748b", "Additional Notes",
+          tagList(data.additional_notes, "tag-default"),
+          true
+        )
+      ] : [])
+    ].join("");
+
+    if (meta) {
+      metaInfo.textContent = `${meta.pages_extracted} pages · ${(meta.total_characters / 1000).toFixed(0)}k chars${meta.truncated ? " · truncated" : ""}`;
+    }
+
+    resultsEl.classList.add("visible");
+  }
+</script>
+</body>
+</html>
